@@ -42,8 +42,12 @@ const API = {
     
     const cachedData = sessionStorage.getItem(cacheKey);
     if (cachedData) {
-      console.log("Loaded Schema from Cache");
-      return JSON.parse(cachedData);
+      const parsed = JSON.parse(cachedData);
+      // Force refresh if the old schema format (without lookups) was cached
+      if (parsed && parsed.lookups) {
+        console.log("Loaded Schema from Cache");
+        return parsed;
+      }
     }
 
     console.log("Fetching Schema from API...");
@@ -76,6 +80,27 @@ const API = {
       }
     } catch(err) {
       console.error("Failed to fetch profile:", err);
+      return null;
+    }
+  },
+
+  async fetchMetaData() {
+    const cacheKey = `vt_meta`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+    if (cachedData) return JSON.parse(cachedData);
+
+    console.log("Fetching MetaData from API...");
+    try {
+      const response = await fetch(`${API_URL}?patient=${CURRENT_PATIENT}&action=readallmeta&key=${VT_KEY}`);
+      const result = await response.json();
+      if (result.status === "success") {
+        sessionStorage.setItem(cacheKey, JSON.stringify(result.data.data));
+        return result.data.data;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch(err) {
+      console.error("Failed to fetch metadata:", err);
       return null;
     }
   },

@@ -11,9 +11,10 @@ async function generateForm(tableName, recordId, formElementId) {
   `;
 
   try {
-    const [records, apiConfig] = await Promise.all([
+    const [records, apiConfig, metaData] = await Promise.all([
       API.fetchData(tableName),
-      API.fetchSchema()
+      API.fetchSchema(),
+      API.fetchMetaData()
     ]);
     
     let headers = [];
@@ -47,7 +48,30 @@ async function generateForm(tableName, recordId, formElementId) {
       if (header.toLowerCase().includes('date')) inputType = 'date';
       else if (header.toLowerCase().includes('time')) inputType = 'time';
 
-      if (header === 'Remarks' || header.toLowerCase().includes('description') || header.toLowerCase().includes('notes')) {
+      // Check if it's a foreign key relation
+      if (apiConfig.lookups && apiConfig.lookups[tableName] && apiConfig.lookups[tableName][header] && metaData) {
+        const targetTable = apiConfig.lookups[tableName][header];
+        const isMultiple = header.endsWith('s'); // e.g., 'Ailment IDs' vs 'Doctor ID'
+        const options = metaData[targetTable] || [];
+
+        let selectedVals = [];
+        if (val) {
+          // Both single and multiple IDs are usually stored as comma-separated strings inside `data` 
+          selectedVals = val.toString().split(',').map(s => s.trim());
+        }
+
+        html += `
+          <div class="mb-3">
+            <label for="field-${header}" class="form-label fw-bold">${header}</label>
+            <select class="form-select" id="field-${header}" name="${header}" ${isMultiple ? 'multiple size="4"' : ''}>
+              ${!isMultiple ? '<option value="">-- Select --</option>' : ''}
+              ${options.map(opt => `<option value="${opt.id}" ${selectedVals.includes(opt.id) ? 'selected' : ''}>${opt.label || opt.id}</option>`).join('')}
+            </select>
+            ${isMultiple ? '<small class="text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</small>' : ''}
+          </div>
+        `;
+      } 
+      else if (header === 'Remarks' || header.toLowerCase().includes('description') || header.toLowerCase().includes('notes')) {
         html += `
           <div class="mb-3">
             <label for="field-${header}" class="form-label fw-bold">${header}</label>
@@ -81,9 +105,17 @@ async function generateForm(tableName, recordId, formElementId) {
 
       const formData = new FormData(form);
       const dataObj = {};
-      formData.forEach((value, key) => {
-        dataObj[key] = value;
-      });
+      
+      // Iterate through unique keys to correctly handle multiple selections
+      const keys = Array.from(new Set(formData.keys()));
+      for (const key of keys) {
+        const values = formData.getAll(key);
+        if (values.length > 1) {
+          dataObj[key] = values.join(','); // Apps script expects comma separated string
+        } else {
+          dataObj[key] = values[0];
+        }
+      }
 
       console.log(`Submitting form for ${tableName}... Payload:`, dataObj);
 
