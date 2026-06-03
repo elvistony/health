@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timeline - Vital Track</title>
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0/dist/css/adminlte.min.css" />
+  <link rel="stylesheet" href="../shared/style.css">
+  <style>
+    .timeline {
+      position: relative;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .timeline::after {
+      content: '';
+      position: absolute;
+      width: 4px;
+      background-color: #e2e8f0;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      margin-left: -2px;
+    }
+    .timeline-card {
+      padding: 10px 40px;
+      position: relative;
+      background-color: inherit;
+      width: 50%;
+    }
+    .timeline-card.left { left: 0; }
+    .timeline-card.right { left: 50%; }
+    
+    .timeline-card::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      right: -10px;
+      background-color: white;
+      border: 4px solid var(--primary);
+      top: 15px;
+      border-radius: 50%;
+      z-index: 1;
+    }
+    .timeline-card.right::after { left: -10px; right: auto; }
+    
+    .timeline-content {
+      padding: 20px 30px;
+      background-color: white;
+      position: relative;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s;
+      border-top: 4px solid var(--primary);
+    }
+    .timeline-content:hover { transform: translateY(-5px); }
+    .timeline-content.inpatient { border-top-color: #d81b60; }
+    .timeline-card.inpatient::after { border-color: #d81b60; }
+
+    @media screen and (max-width: 768px) {
+      .timeline::after { left: 31px; }
+      .timeline-card { width: 100%; padding-left: 70px; padding-right: 25px; }
+      .timeline-card.left::after, .timeline-card.right::after { left: 21px; }
+      .timeline-card.right { left: 0%; }
+    }
+  </style>
+</head>
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+  <div class="app-wrapper">
+    
+    <nav class="app-header navbar navbar-expand bg-body">
+      <div class="container-fluid">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button"><i class="bi bi-list"></i></a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    
+    <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+      <div class="sidebar-brand">
+         <a href="../index.html" class="brand-link"><span class="brand-text fw-light">Vital Track</span></a>
+      </div>
+      <div class="sidebar-wrapper">
+         <nav class="mt-2">
+            <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview">
+               <li class="nav-item"><a class="nav-link" href="../index.html"><i class="nav-icon bi bi-arrow-left"></i><p>Back Home</p></a></li>
+               <li class="nav-item"><a class="nav-link active" href="index.html"><i class="nav-icon bi bi-list-nested"></i><p>Timeline</p></a></li>
+            </ul>
+         </nav>
+      </div>
+    </aside>
+    
+    <main class="app-main">
+      <div class="app-content p-4">
+        
+        <div class="mb-5 text-center">
+          <h2 class="fw-bold">Patient Timeline</h2>
+          <p class="text-muted">Interactive History of Events</p>
+        </div>
+
+        <div id="timeline-feed" class="timeline">
+          <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading events...</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0/dist/js/adminlte.min.js"></script>
+
+  <script src="../shared/api.js"></script>
+  <script>
+    async function loadTimeline() {
+      const feed = document.getElementById('timeline-feed');
+      const visits = await API.fetchData('Visits');
+      const sorted = visits.sort((a, b) => new Date(b.Date) - new Date(a.Date));
+      let html = '';
+      sorted.forEach((visit, index) => {
+        const isHospital = visit['Visit Type'] === 'Inpatient';
+        const side = index % 2 === 0 ? 'left' : 'right';
+        const badgeColor = isHospital ? '#d81b60' : 'var(--primary)'; 
+        html += `
+          <div class="timeline-card ${side} ${isHospital ? 'inpatient' : ''}">
+            <div class="timeline-content ${isHospital ? 'inpatient' : ''}" onclick="window.location.href='../appointment/index.html#${visit.id}'">
+              <h6 style="color: ${badgeColor};" class="mb-1 fw-bold text-uppercase small">${visit['Visit Type']}</h6>
+              <h5 class="mb-2">${new Date(visit.Date).toLocaleDateString()}</h5>
+              <p class="mb-0 text-dark fw-semibold">${visit.Title || 'Consultation'}</p>
+              <small class="text-muted">${visit.Remarks || ''}</small>
+            </div>
+          </div>
+        `;
+      });
+      if (sorted.length === 0) {
+        feed.innerHTML = '<div class="text-center text-muted">No timeline events found.</div>';
+      } else {
+        feed.innerHTML = html;
+      }
+      feed.style.minHeight = '100px';
+    }
+    window.addEventListener('load', loadTimeline);
+  </script>
+</body>
+</html>

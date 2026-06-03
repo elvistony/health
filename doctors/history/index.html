@@ -1,0 +1,22 @@
+// Inside /doctors/patient-history.html
+async function loadDoctorHistory() {
+  const doctorId = window.location.hash.substring(1); // e.g. "DOC-123"
+  const container = document.getElementById('filtered-table');
+  
+  const allVisits = await API.fetchData('Visits');
+  
+  // Array.filter() is our best friend here
+  const doctorVisits = allVisits.filter(visit => {
+    // Check if the nested Doctor ID data matches our hash
+    const currentDoc = typeof visit['Doctor ID'] === 'object' ? visit['Doctor ID'].id : visit['Doctor ID'];
+    return currentDoc === doctorId;
+  });
+
+  if (doctorVisits.length === 0) {
+    container.innerHTML = `<p>No records found for Doctor ID: ${doctorId}</p>`;
+    return;
+  }
+
+  // We can pass this pre-filtered array into a custom table renderer
+  renderFilteredTable(doctorVisits, container); 
+}

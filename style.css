@@ -1,0 +1,55 @@
+/* Base App Layout */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+/* Sidebar Styling */
+.sidebar {
+  background-color: #f8f9fa;
+  padding: var(--spacing);
+  border-bottom: 1px solid var(--muted-border-color);
+}
+
+.sidebar nav ul {
+  padding-left: 0;
+}
+
+.sidebar nav li {
+  list-style: none;
+  margin-bottom: 0.5rem;
+}
+
+.nav-link {
+  display: block;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  color: var(--h1-color);
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.nav-link:hover, .nav-link.active {
+  background-color: #e2e8f0;
+  font-weight: bold;
+}
+
+/* Main Content Area */
+#app-root {
+  flex: 1;
+  padding: var(--spacing);
+  overflow-x: auto;
+}
+
+/* Desktop override: Put sidebar on the left instead of top */
+@media (min-width: 768px) {
+  .app-layout {
+    flex-direction: row;
+  }
+  .sidebar {
+    width: 280px;
+    border-bottom: none;
+    border-right: 1px solid var(--muted-border-color);
+  }
+}

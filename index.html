@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vital Track</title>
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0/dist/css/adminlte.min.css" />
+  <link rel="stylesheet" href="shared/style.css">
+  
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+</head>
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+  <div class="app-wrapper">
+    
+    <nav class="app-header navbar navbar-expand bg-body">
+      <div class="container-fluid">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button"><i class="bi bi-list"></i></a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    
+    <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+      <div class="sidebar-brand">
+         <a href="index.html" class="brand-link"><span class="brand-text fw-light">Vital Track</span></a>
+      </div>
+      <div class="sidebar-wrapper">
+         <nav class="mt-2">
+            <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview">
+               <li class="nav-header">CONSULTANT VIEWS</li>
+               <li class="nav-item"><a class="nav-link active" href="index.html"><i class="nav-icon bi bi-speedometer2"></i><p>Dashboard</p></a></li>
+               <li class="nav-item"><a class="nav-link" href="snapshot/index.html"><i class="nav-icon bi bi-clock"></i><p>Snapshot (60s)</p></a></li>
+               <li class="nav-item"><a class="nav-link" href="timeline/index.html"><i class="nav-icon bi bi-list-nested"></i><p>Full Timeline</p></a></li>
+               
+               <li class="nav-header">DATABASES</li>
+               <li class="nav-item"><a class="nav-link" href="visits/index.html"><i class="nav-icon bi bi-journal-medical"></i><p>Visits</p></a></li>
+               <li class="nav-item"><a class="nav-link" href="medications/index.html"><i class="nav-icon bi bi-capsule"></i><p>Medications</p></a></li>
+               <li class="nav-item"><a class="nav-link" href="ailments/index.html"><i class="nav-icon bi bi-bug"></i><p>Ailments</p></a></li>
+               <li class="nav-item"><a class="nav-link" href="labs/index.html"><i class="nav-icon bi bi-file-medical"></i><p>Labs</p></a></li>
+               <li class="nav-item"><a class="nav-link" href="doctors/index.html"><i class="nav-icon bi bi-people"></i><p>Doctors</p></a></li>
+            </ul>
+         </nav>
+      </div>
+    </aside>
+    
+    <main class="app-main">
+      <div class="app-content p-4">
+        <div id="app-root">
+          <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0/dist/js/adminlte.min.js"></script>
+
+  <script src="shared/api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

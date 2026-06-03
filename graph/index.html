@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Graph - Vital Track</title>
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0/dist/css/adminlte.min.css" />
+  <link rel="stylesheet" href="../shared/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+  <div class="app-wrapper">
+    
+    <nav class="app-header navbar navbar-expand bg-body">
+      <div class="container-fluid">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button"><i class="bi bi-list"></i></a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    
+    <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+      <div class="sidebar-brand">
+         <a href="../index.html" class="brand-link"><span class="brand-text fw-light">Vital Track</span></a>
+      </div>
+      <div class="sidebar-wrapper">
+         <nav class="mt-2">
+            <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview">
+               <li class="nav-item"><a class="nav-link" href="../index.html"><i class="nav-icon bi bi-arrow-left"></i><p>Back Home</p></a></li>
+            </ul>
+         </nav>
+      </div>
+    </aside>
+    
+    <main class="app-main">
+      <div class="app-content p-4">
+        
+        <div class="mb-4">
+          <h2 id="graph-title">Loading Graph...</h2>
+          <p class="text-muted">Visual Data Overview</p>
+        </div>
+
+        <div class="premium-card">
+          <canvas id="myChart" width="400" height="200" style="display:none;"></canvas>
+          <div id="error-msg" class="alert alert-danger" style="display:none;"></div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0/dist/js/adminlte.min.js"></script>
+
+  <script src="../shared/api.js"></script>
+  <script>
+    window.addEventListener('load', async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tableName = urlParams.get('table') || 'Visits';
+      let filterBy = urlParams.get('filterby') || 'Visit Type';
+
+      document.getElementById('graph-title').innerText = `${tableName} by ${filterBy}`;
+
+      try {
+        const data = await API.fetchData(tableName);
+        if(!data || data.length === 0) throw new Error("No data available to graph.");
+
+        const counts = {};
+        const labels = [];
+        const values = [];
+
+        data.forEach(row => {
+          let val = row[filterBy];
+          if(typeof val === 'object' && val !== null) val = val.data; 
+          if(!val) val = "Unknown";
+          counts[val] = (counts[val] || 0) + 1;
+        });
+
+        for(const [key, count] of Object.entries(counts)) {
+          labels.push(key);
+          values.push(count);
+        }
+
+        document.getElementById('myChart').style.display = 'block';
+        const ctx = document.getElementById('myChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: `Count of ${filterBy}`,
+                    data: values,
+                    backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                    borderColor: 'rgba(37, 99, 235, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+
+      } catch (e) {
+        console.error(e);
+        const errEl = document.getElementById('error-msg');
+        errEl.style.display = 'block';
+        errEl.innerText = e.message || "Failed to render graph.";
+      }
+    });
+  </script>
+</body>
+</html>
