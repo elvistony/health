@@ -35,6 +35,7 @@
   font-weight: bold;
 }
 
+
 /* Main Content Area */
 #app-root {
   flex: 1;
@@ -53,3 +54,6 @@
     border-right: 1px solid var(--muted-border-color);
   }
 }
+
+/* Overrides Admin Theme */
+
