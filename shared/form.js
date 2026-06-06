@@ -1,6 +1,11 @@
 // shared/form.js
 
-async function generateForm(tableName, recordId, formElementId) {
+async function generateForm(tableName, recordId, formElementId, options = {}) {
+  const defaultValues = options.defaultValues || {};
+  const hiddenFields = options.hiddenFields || [];
+  const collapsibleFields = options.collapsibleFields || [];
+  const enumDropdowns = options.enumDropdowns || {};
+  
   const form = document.getElementById(formElementId);
   form.innerHTML = `
     <div class="d-flex justify-content-center my-3">
@@ -33,7 +38,8 @@ async function generateForm(tableName, recordId, formElementId) {
       existingRecord = records.find(r => r.id === recordId);
     }
 
-    let html = '';
+    let mainHtml = '';
+    let collapseHtml = '';
     
     headers.forEach(header => {
       let val = '';
@@ -42,25 +48,44 @@ async function generateForm(tableName, recordId, formElementId) {
         if (typeof val === 'object' && val !== null) {
           val = val.data || val.id || ''; // Extract from lookup object
         }
+      } else if (defaultValues[header] !== undefined) {
+        val = defaultValues[header]; // prefill on new
+      }
+
+      if (hiddenFields.includes(header)) {
+        mainHtml += `<input type="hidden" id="field-${header}" name="${header}" value="${val}" />`;
+        return;
       }
 
       let inputType = 'text';
       if (header.toLowerCase().includes('date')) inputType = 'date';
       else if (header.toLowerCase().includes('time')) inputType = 'time';
 
+      let fieldHtml = '';
+
+      if (enumDropdowns[header]) {
+        fieldHtml += `
+          <div class="mb-3">
+            <label for="field-${header}" class="form-label fw-bold">${header}</label>
+            <select class="form-select" id="field-${header}" name="${header}" required>
+              <option value="">-- Select --</option>
+              ${enumDropdowns[header].map(opt => `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+            </select>
+          </div>
+        `;
+      }
       // Check if it's a foreign key relation
-      if (apiConfig.lookups && apiConfig.lookups[tableName] && apiConfig.lookups[tableName][header] && metaData) {
+      else if (apiConfig.lookups && apiConfig.lookups[tableName] && apiConfig.lookups[tableName][header] && metaData) {
         const targetTable = apiConfig.lookups[tableName][header];
         const isMultiple = header.endsWith('s'); // e.g., 'Ailment IDs' vs 'Doctor ID'
         const options = metaData[targetTable] || [];
 
         let selectedVals = [];
         if (val) {
-          // Both single and multiple IDs are usually stored as comma-separated strings inside `data` 
           selectedVals = val.toString().split(',').map(s => s.trim());
         }
 
-        html += `
+        fieldHtml += `
           <div class="mb-3">
             <label for="field-${header}" class="form-label fw-bold">${header}</label>
             <select class="form-select" id="field-${header}" name="${header}" ${isMultiple ? 'multiple size="4"' : ''}>
@@ -72,21 +97,48 @@ async function generateForm(tableName, recordId, formElementId) {
         `;
       } 
       else if (header === 'Remarks' || header.toLowerCase().includes('description') || header.toLowerCase().includes('notes')) {
-        html += `
+        fieldHtml += `
           <div class="mb-3">
             <label for="field-${header}" class="form-label fw-bold">${header}</label>
             <textarea class="form-control" id="field-${header}" name="${header}" rows="3">${val}</textarea>
           </div>
         `;
       } else {
-        html += `
+        fieldHtml += `
           <div class="mb-3">
             <label for="field-${header}" class="form-label fw-bold">${header}</label>
             <input type="${inputType}" class="form-control" id="field-${header}" name="${header}" value="${val}" ${header === 'id' ? 'readonly' : ''} required />
           </div>
         `;
       }
+
+      if (collapsibleFields.includes(header)) {
+        collapseHtml += fieldHtml;
+      } else {
+        mainHtml += fieldHtml;
+      }
     });
+
+    let html = mainHtml;
+    
+    if (collapseHtml) {
+      html += `
+        <div class="accordion mb-3" id="accordionAdvanced">
+          <div class="accordion-item border-0 shadow-sm rounded">
+            <h2 class="accordion-header" id="headingAdvanced">
+              <button class="accordion-button collapsed fw-bold text-muted bg-body-tertiary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdvanced" aria-expanded="false" aria-controls="collapseAdvanced">
+                <i class="bi bi-gear me-2"></i> Additional Settings (Optional)
+              </button>
+            </h2>
+            <div id="collapseAdvanced" class="accordion-collapse collapse" aria-labelledby="headingAdvanced" data-bs-parent="#accordionAdvanced">
+              <div class="accordion-body bg-body-tertiary border-top">
+                ${collapseHtml}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
 
     html += `
       <div class="d-flex justify-content-end mt-4 gap-2">

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Labs - Vital Track</title>
+  <title>Incidents - Vital Track</title>
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
@@ -32,7 +32,8 @@
          <nav class="mt-2">
             <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview">
                <li class="nav-item"><a class="nav-link" href="../index.html"><i class="nav-icon bi bi-arrow-left"></i><p>Back Home</p></a></li>
-               <li class="nav-item"><a class="nav-link active" href="index.html"><i class="nav-icon bi bi-file-medical"></i><p>Labs</p></a></li>
+               <li class="nav-item"><a class="nav-link" href="../visits/index.html"><i class="nav-icon bi bi-journal-medical"></i><p>Visits</p></a></li>
+               <li class="nav-item"><a class="nav-link active" href="index.html"><i class="nav-icon bi bi-exclamation-triangle"></i><p>Incidents</p></a></li>
             </ul>
          </nav>
       </div>
@@ -66,7 +67,11 @@
   <script src="../shared/table.js"></script>
   <script src="../shared/form.js"></script>
   <script>
-    renderGenericTable("Labs", "table-view");
+    renderGenericTable("Visits", "table-view", { 
+      key: 'Visit Type', 
+      include: 'Incident',
+      hideColumns: ['Doctor ID', 'Ailment IDs', 'Report IDs', 'Medication IDs', 'Visit Type']
+    });
     window.addEventListener('hashchange', handleHash);
     function handleHash() {
       const hash = window.location.hash.substring(1);
@@ -76,13 +81,20 @@
         tableView.style.display = 'block';
         modalView.style.display = 'none';
       } else if (hash === 'new') {
-        document.getElementById('modal-title').innerText = "Add New Lab Report";
+        document.getElementById('modal-title').innerText = "Log New Incident";
         modalView.style.display = 'flex';
-        generateForm("Labs", "new", "record-form");
+        generateForm("Visits", "new", "record-form", { 
+          defaultValues: { "Visit Type": "Incident" },
+          hiddenFields: ["Visit Type"],
+          collapsibleFields: ["Doctor ID", "Ailment IDs", "Report IDs", "Medication IDs"]
+        });
       } else {
         document.getElementById('modal-title').innerText = `Editing Record`;
         modalView.style.display = 'flex';
-        generateForm("Labs", hash, "record-form");
+        generateForm("Visits", hash, "record-form", {
+          hiddenFields: ["Visit Type"],
+          collapsibleFields: ["Doctor ID", "Ailment IDs", "Report IDs", "Medication IDs"]
+        });
       }
     }
   </script>

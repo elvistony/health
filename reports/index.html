@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visits - Vital Track</title>
+  <title>Reports - Vital Track</title>
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
@@ -32,8 +32,7 @@
          <nav class="mt-2">
             <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview">
                <li class="nav-item"><a class="nav-link" href="../index.html"><i class="nav-icon bi bi-arrow-left"></i><p>Back Home</p></a></li>
-               <li class="nav-item"><a class="nav-link active" href="index.html"><i class="nav-icon bi bi-journal-medical"></i><p>Visits</p></a></li>
-               <li class="nav-item"><a class="nav-link" href="../incident/index.html"><i class="nav-icon bi bi-exclamation-triangle"></i><p>Incidents</p></a></li>
+               <li class="nav-item"><a class="nav-link active" href="index.html"><i class="nav-icon bi bi-file-earmark-medical"></i><p>Reports</p></a></li>
             </ul>
          </nav>
       </div>
@@ -67,26 +66,34 @@
   <script src="../shared/table.js"></script>
   <script src="../shared/form.js"></script>
   <script>
-    renderGenericTable("Visits", "table-view", { key: 'Visit Type', exclude: 'Incident' });
+    renderGenericTable("Reports", "table-view");
     window.addEventListener('hashchange', handleHash);
     function handleHash() {
       const hash = window.location.hash.substring(1);
       const tableView = document.getElementById('table-view');
       const modalView = document.getElementById('modal-view');
+      
+      const formOptions = {
+        enumDropdowns: {
+          "Type": ["Lab", "Discharge Summary", "Prescription", "Receipt"]
+        }
+      };
+
       if (!hash) {
         tableView.style.display = 'block';
         modalView.style.display = 'none';
       } else if (hash === 'new') {
-        document.getElementById('modal-title').innerText = "Add New Visit";
+        document.getElementById('modal-title').innerText = "Add New Report";
         modalView.style.display = 'flex';
-        generateForm("Visits", "new", "record-form");
+        generateForm("Reports", "new", "record-form", formOptions);
       } else {
         document.getElementById('modal-title').innerText = `Editing Record`;
         modalView.style.display = 'flex';
-        generateForm("Visits", hash, "record-form");
+        generateForm("Reports", hash, "record-form", formOptions);
       }
     }
   </script>
 </body>
 </html>
+
 

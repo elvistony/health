@@ -41,12 +41,12 @@ async function loadAppointment() {
       medsList.innerHTML = relatedMeds.map(m => `<li class='list-group-item border-0 px-0 d-flex justify-content-between align-items-center'><strong>${m.Name}</strong> <span class='text-muted'>${m['Consumption Pattern'] || ''}</span></li>`).join('');
     }
 
-    const relatedLabs = visit['Lab IDs']?.referenced || [];
-    const labsList = document.getElementById('labs-list');
-    if (relatedLabs.length === 0) {
-      labsList.innerHTML = "<li class='list-group-item text-muted border-0'>No lab reports associated.</li>";
+    const relatedReports = visit['Report IDs']?.referenced || [];
+    const reportsList = document.getElementById('reports-list');
+    if (relatedReports.length === 0) {
+      reportsList.innerHTML = "<li class='list-group-item text-muted border-0'>No reports associated.</li>";
     } else {
-      labsList.innerHTML = relatedLabs.map(l => `<li class='list-group-item border-0 px-0'><strong>${l.Name || l.Title || 'Report'}</strong> ${l.URL ? `<a href="${l.URL}" target="_blank" class='ms-2 btn btn-sm btn-outline-primary'>View Document</a>` : ''}</li>`).join('');
+      reportsList.innerHTML = relatedReports.map(l => `<li class='list-group-item border-0 px-0'><strong>${l.Name || l.Title || 'Report'}</strong> <span class="badge bg-secondary ms-2">${l.Type || 'File'}</span> ${l.File ? `<a href="${l.File}" target="_blank" class='ms-2 btn btn-sm btn-outline-primary'>View Document</a>` : ''}</li>`).join('');
     }
 
     const relatedAilments = visit['Ailment IDs']?.referenced || [];

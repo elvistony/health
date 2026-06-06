@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab Data Timeline - Vital Track</title>
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0/dist/css/adminlte.min.css" />
+  <link rel="stylesheet" href="../../shared/style.css">
+  <style>
+    .param-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .status-badge {
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .chart-container {
+      position: relative;
+      height: 200px;
+      width: 100%;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+  <div class="app-wrapper">
+    
+    <nav class="app-header navbar navbar-expand bg-body">
+      <div class="container-fluid">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button"><i class="bi bi-list"></i></a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    
+    <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+      <div class="sidebar-brand">
+         <a href="../../index.html" class="brand-link"><span class="brand-text fw-light">Vital Track</span></a>
+      </div>
+      <div class="sidebar-wrapper">
+         <nav class="mt-2">
+            <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview">
+               <li class="nav-header">CONSULTANT VIEWS</li>
+               <li class="nav-item"><a class="nav-link" href="../../index.html"><i class="nav-icon bi bi-speedometer2"></i><p>Dashboard</p></a></li>
+               <li class="nav-item"><a class="nav-link" href="../index.html"><i class="nav-icon bi bi-clock"></i><p>Snapshot (60s)</p></a></li>
+               <li class="nav-item"><a class="nav-link active" href="index.html"><i class="nav-icon bi bi-graph-up"></i><p>Lab Trends Panel</p></a></li>
+               <li class="nav-item"><a class="nav-link" href="../../timeline/index.html"><i class="nav-icon bi bi-list-nested"></i><p>Full Timeline</p></a></li>
+               <li class="nav-header">DATABASES</li>
+               <li class="nav-item"><a class="nav-link" href="../../visits/index.html"><i class="nav-icon bi bi-journal-medical"></i><p>Visits</p></a></li>
+               <li class="nav-item"><a class="nav-link" href="../../reports/index.html"><i class="nav-icon bi bi-file-earmark-medical"></i><p>Reports</p></a></li>
+            </ul>
+         </nav>
+      </div>
+    </aside>
+    
+    <main class="app-main">
+      <div class="app-content p-4">
+        
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+          <div>
+            <h2 class="fw-bold mb-1">Lab Trends Panel</h2>
+            <p class="text-muted">Longitudinal Analysis of All Parameters</p>
+          </div>
+          <button class="btn btn-outline-secondary" onclick="API.refreshPageData()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        </div>
+
+        <!-- Filters -->
+        <div class="row mb-4" id="filters-container" style="display: none;">
+          <div class="col-md-8 mb-2">
+            <input type="text" id="param-search" class="form-control" placeholder="Search for parameters (e.g., Glucose, Cholesterol)...">
+          </div>
+          <div class="col-md-4 mb-2">
+            <select id="status-filter" class="form-select">
+              <option value="all">All Latest Statuses</option>
+              <option value="normal">Normal (Green)</option>
+              <option value="high">High (Red)</option>
+              <option value="low">Low (Amber)</option>
+              <option value="untracked">Untracked</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="data-container">
+          <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading data...</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0/dist/js/adminlte.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script src="../../shared/api.js"></script>
+  <script>
+    async function loadPanel() {
+      try {
+        const [labsData, reports] = await Promise.all([
+           API.fetchDataFlat('LabsData'),
+           API.fetchData('Reports')
+        ]);
+
+        if (!labsData || labsData.length === 0) {
+          document.getElementById('data-container').innerHTML = `<div class="alert alert-warning">No lab data found in the database.</div>`;
+          return;
+        }
+
+        // Group by Parameter
+        const grouped = {};
+        labsData.forEach(pt => {
+          // In flat fetch, the spreadsheet headers are preserved. Check for 'Parameter' or fallbacks.
+          const paramName = pt.Parameter || pt['Test Name'] || 'Unknown Parameter';
+          if (!grouped[paramName]) grouped[paramName] = [];
+          grouped[paramName].push(pt);
+        });
+
+        let html = '<div class="row g-4">';
+        const chartConfigs = [];
+
+        for (const [paramName, points] of Object.entries(grouped)) {
+          // Sort points chronologically
+          points.sort((a, b) => new Date(a.Date) - new Date(b.Date));
+
+          const latestPt = points[points.length - 1];
+          const val = parseFloat(latestPt['Observed Value']);
+          const min = parseFloat(latestPt.Min);
+          const max = parseFloat(latestPt.Max);
+          const unit = latestPt.Unit || '';
+
+          let statusText = 'Untracked';
+          let badgeClass = 'text-bg-secondary';
+          let barColor = '#0d6efd'; // default blue
+
+          if (!isNaN(val) && !isNaN(min) && !isNaN(max)) {
+            statusText = 'Normal';
+            badgeClass = 'text-bg-success';
+            barColor = '#198754';
+            
+            if (val < min) {
+              statusText = 'Low';
+              badgeClass = 'text-bg-warning';
+              barColor = '#ffc107';
+            } else if (val > max) {
+              statusText = 'High';
+              badgeClass = 'text-bg-danger';
+              barColor = '#dc3545';
+            }
+          }
+
+          const chartId = 'chart-' + paramName.replace(/[^a-zA-Z0-9]/g, '');
+          
+          let reportBtnHtml = '';
+          const reportId = latestPt['Report ID'] || latestPt['Lab ID'];
+          if (reportId && reports) {
+            const report = reports.find(r => r.id === reportId);
+            if (report && report.File) {
+               reportBtnHtml = `<a href="${report.File}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-text"></i> Open Latest Report</a>`;
+            }
+          }
+
+          html += `
+            <div class="col-md-6 param-wrapper" data-name="${paramName}" data-status="${statusText.toLowerCase()}" style="display: block;">
+              <div class="param-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <h5 class="fw-bold mb-1">${paramName}</h5>
+                    <span class="text-muted small">Latest: ${latestPt['Observed Value']} ${unit}</span>
+                  </div>
+                  <div class="text-end">
+                    <span class="badge ${badgeClass} status-badge d-block mb-2">${statusText}</span>
+                    ${reportBtnHtml}
+                  </div>
+                </div>
+                <div class="chart-container">
+                  <canvas id="${chartId}"></canvas>
+                </div>
+              </div>
+            </div>
+          `;
+
+          // Prepare chart data
+          const labels = points.map(p => {
+             const d = new Date(p.Date);
+             return ('0' + d.getDate()).slice(-2) + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + d.getFullYear();
+          });
+          const dataValues = points.map(p => parseFloat(p['Observed Value']) || 0);
+
+          chartConfigs.push({
+            id: chartId,
+            labels: labels,
+            data: dataValues,
+            color: barColor,
+            min: min,
+            max: max,
+            hasBounds: !isNaN(min) && !isNaN(max)
+          });
+        }
+
+        html += '</div>';
+        document.getElementById('data-container').innerHTML = html;
+        document.getElementById('filters-container').style.display = 'flex';
+
+        // Render Charts
+        chartConfigs.forEach(config => {
+          const ctx = document.getElementById(config.id);
+          if (!ctx) return;
+
+          const datasets = [{
+             label: 'Observed Value',
+             data: config.data,
+             borderColor: config.color,
+             backgroundColor: config.color + '33', // 20% opacity
+             borderWidth: 2,
+             pointRadius: 4,
+             fill: true,
+             tension: 0.3
+          }];
+
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: config.labels,
+              datasets: datasets
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                   callbacks: {
+                      label: function(context) {
+                         let label = context.parsed.y || '';
+                         if (config.hasBounds) {
+                             label += ` (Range: ${config.min} - ${config.max})`;
+                         }
+                         return label;
+                      }
+                   }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: false,
+                  suggestedMin: config.hasBounds ? config.min * 0.8 : undefined,
+                  suggestedMax: config.hasBounds ? config.max * 1.2 : undefined,
+                }
+              }
+            }
+          });
+        });
+
+      } catch (err) {
+        console.error("Error rendering panel:", err);
+        document.getElementById('data-container').innerHTML = `<div class="alert alert-danger">Failed to load lab data.</div>`;
+      }
+    }
+
+    function filterCards() {
+      const query = document.getElementById('param-search').value.toLowerCase();
+      const status = document.getElementById('status-filter').value;
+      
+      const cards = document.querySelectorAll('.param-wrapper');
+      cards.forEach(card => {
+         const paramName = card.dataset.name.toLowerCase();
+         const paramStatus = card.dataset.status;
+         
+         const matchesQuery = paramName.includes(query);
+         const matchesStatus = status === 'all' || status === paramStatus;
+         
+         if (matchesQuery && matchesStatus) {
+           card.style.display = 'block';
+         } else {
+           card.style.display = 'none';
+         }
+      });
+    }
+
+    document.getElementById('param-search').addEventListener('input', filterCards);
+    document.getElementById('status-filter').addEventListener('change', filterCards);
+
+    window.addEventListener('load', loadPanel);
+  </script>
+</body>
+</html>

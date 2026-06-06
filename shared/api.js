@@ -84,6 +84,22 @@ const API = {
     }
   },
 
+  async fetchDataByFilter(tableName, filterColumn, filterValue) {
+    console.log(`Fetching ${tableName} filtered by ${filterColumn}...`);
+    try {
+      const response = await fetch(`${API_URL}?patient=${CURRENT_PATIENT}&action=readbyfilter&category=${tableName}&filterColumn=${filterColumn}&filterValue=${filterValue}&key=${VT_KEY}`);
+      const result = await response.json();
+      if (result.status === "success") {
+        return Array.isArray(result.data) ? result.data : (result.data.data || []);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch(err) {
+      console.error("Failed to fetch filtered data:", err);
+      return [];
+    }
+  },
+
   async fetchMetaData() {
     const cacheKey = `vt_meta`;
     const cachedData = sessionStorage.getItem(cacheKey);
@@ -137,10 +153,44 @@ const API = {
     }
   },
 
+  async fetchDataFlat(tableName, forceRefresh = false) {
+    const cacheKey = `vt_${CURRENT_PATIENT}_${tableName}_flat`;
+    
+    if (!forceRefresh) {
+      const cachedData = sessionStorage.getItem(cacheKey);
+      if (cachedData) {
+        console.log(`Loaded ${tableName} FLAT from Cache`);
+        return JSON.parse(cachedData);
+      }
+    }
+
+    console.log(`Fetching ${tableName} FLAT from API...`);
+    try {
+      const response = await fetch(`${API_URL}?patient=${CURRENT_PATIENT}&action=readall_flat&category=${tableName}&key=${VT_KEY}`);
+      const result = await response.json();
+      
+      if (result.status === "success") {
+        sessionStorage.setItem(cacheKey, JSON.stringify(result.data));
+        return result.data;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (err) {
+      console.error(`Failed to fetch flat ${tableName}:`, err);
+      return [];
+    }
+  },
+
   // Call this after you POST an update/create/delete so the UI grabs fresh data
   clearCache(tableName) {
     console.log(`Clearing cache for ${tableName}...`);
     sessionStorage.removeItem(`vt_${CURRENT_PATIENT}_${tableName}`);
+    sessionStorage.removeItem(`vt_${CURRENT_PATIENT}_${tableName}_flat`);
+  },
+
+  refreshPageData() {
+    sessionStorage.clear();
+    window.location.reload();
   }
 };
 

@@ -62,6 +62,8 @@
     .timeline-content:hover { transform: translateY(-5px); }
     .timeline-content.inpatient { border-top-color: #d81b60; }
     .timeline-card.inpatient::after { border-color: #d81b60; }
+    .timeline-content.incident { border-top-color: #ff9800; }
+    .timeline-card.incident::after { border-color: #ff9800; }
 
     @media screen and (max-width: 768px) {
       .timeline::after { left: 31px; }
@@ -133,14 +135,17 @@
       let html = '';
       sorted.forEach((visit, index) => {
         const isHospital = visit['Visit Type'] === 'Inpatient';
+        const isIncident = visit['Visit Type'] === 'Incident';
         const side = index % 2 === 0 ? 'left' : 'right';
-        const badgeColor = isHospital ? '#d81b60' : 'var(--primary)'; 
+        const badgeColor = isHospital ? '#d81b60' : (isIncident ? '#ff9800' : 'var(--primary)'); 
+        const link = isIncident ? `../incident/index.html#${visit.id}` : `../appointment/index.html#${visit.id}`;
+
         html += `
-          <div class="timeline-card ${side} ${isHospital ? 'inpatient' : ''}">
-            <div class="timeline-content ${isHospital ? 'inpatient' : ''}" onclick="window.location.href='../appointment/index.html#${visit.id}'">
+          <div class="timeline-card ${side} ${isHospital ? 'inpatient' : ''} ${isIncident ? 'incident' : ''}">
+            <div class="timeline-content ${isHospital ? 'inpatient' : ''} ${isIncident ? 'incident' : ''}" onclick="window.location.href='${link}'">
               <h6 style="color: ${badgeColor};" class="mb-1 fw-bold text-uppercase small">${visit['Visit Type']}</h6>
               <h5 class="mb-2">${new Date(visit.Date).toLocaleDateString()}</h5>
-              <p class="mb-0 text-dark fw-semibold">${visit.Title || 'Consultation'}</p>
+              <p class="mb-0 text-dark fw-semibold">${visit.Title || 'Event'}</p>
               <small class="text-muted">${visit.Remarks || ''}</small>
             </div>
           </div>
@@ -157,3 +162,4 @@
   </script>
 </body>
 </html>
+
