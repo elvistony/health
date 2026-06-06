@@ -189,7 +189,11 @@ const API = {
   },
 
   refreshPageData() {
+    const patient = sessionStorage.getItem('vt_patient');
+    const key = sessionStorage.getItem('vt_key');
     sessionStorage.clear();
+    if (patient) sessionStorage.setItem('vt_patient', patient);
+    if (key) sessionStorage.setItem('vt_key', key);
     window.location.reload();
   }
 };
